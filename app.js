@@ -43,9 +43,11 @@ async function checkAdmin() {
   return isAdmin;
 }
 function closeAdmin() {
-  isAdmin=false;
-  byId('editorDialog').close();byId('adminDialog').close();
-  byId('eventEditor').reset();editingId=null;editingVersion=null;
+  byId('editorDialog').close();
+  byId('adminDialog').close();
+  byId('eventEditor').reset();
+  editingId = null;
+  editingVersion = null;
 }
 function renderAdminList() {
   const list=byId('adminList');list.replaceChildren();
@@ -200,6 +202,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     if(busy)return;
     const {error}=await db.auth.signOut({scope:'local'});
     if(error){byId('adminStatus').textContent='ออกจากระบบไม่สำเร็จ กรุณาลองใหม่';return;}
+    isAdmin = false;
     closeAdmin();byId('loginForm').reset();
   };
   const config=window.APP_CONFIG||{};
@@ -208,7 +211,15 @@ window.addEventListener('DOMContentLoaded',async()=>{
   }
   try{
     db=window.supabase.createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{persistSession:true,storage:window.sessionStorage,autoRefreshToken:true,detectSessionInUrl:false}});
-    db.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||!session)closeAdmin();});
+     db.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT' || !session) {
+      isAdmin = false;
+      closeAdmin();
+      renderCalendar();
+      renderTable();
+      renderAdminList();
+    }
+  });
     await loadEvents();
     await checkAdmin();
     // Refresh when readers return to the tab. No polling and no local event database.
