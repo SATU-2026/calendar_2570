@@ -327,10 +327,10 @@
         </div>
       </div>
 
-      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
-        <button id="modalConfirmBtn" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition">
-          ปิดหน้าต่าง
-        </button>
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex flex-wrap gap-2 justify-end">
+        <button id="modalEditBtn" type="button" class="hidden px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 bg-white hover:bg-slate-100">แก้ไข</button>
+        <button id="modalDeleteBtn" type="button" class="hidden px-4 py-2 text-xs font-semibold rounded-lg border border-red-300 bg-red-50 text-red-700 hover:bg-red-100">ลบ</button>
+        <button id="modalConfirmBtn" type="button" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800">ปิดหน้าต่าง</button>
       </div>
     </div>
   </div>
@@ -585,6 +585,16 @@
             showDayEventsModal(dateKey, dayEvents);
             return;
           }
+          // Clicking a blank part of any current-month day opens the editor for admins.
+          if (isAdmin) {
+            openEditor();
+            if (document.getElementById('editorDialog').open) {
+              const form = document.getElementById('eventEditor');
+              form.elements.date.value = dateKey;
+              form.elements.endDate.value = dateKey;
+            }
+            return;
+          }
           if (dayEvents.length === 1) {
             showEventModal(dayEvents[0].id);
           } else if (dayEvents.length > 1) {
@@ -717,6 +727,33 @@
       document.getElementById("modalResponsible").textContent = evt.responsible;
       document.getElementById("modalSystem").textContent = evt.system;
       document.getElementById("modalDesc").textContent = evt.description;
+
+      // Only signed-in admins can edit or delete an event.
+      const editBtn = document.getElementById("modalEditBtn");
+      const deleteBtn = document.getElementById("modalDeleteBtn");
+      editBtn.classList.toggle("hidden", !isAdmin);
+      deleteBtn.classList.toggle("hidden", !isAdmin);
+      editBtn.onclick = () => {
+        if (!isAdmin) return;
+        document.getElementById("eventModal").classList.add("hidden");
+        openEditor(evt);
+      };
+      deleteBtn.onclick = async () => {
+        if (!isAdmin || deleteBtn.disabled) return;
+        deleteBtn.disabled = true;
+        try {
+          await deleteEvent(evt);
+          if (!masterEvents.some(e => e.id === evt.id)) {
+            document.getElementById("eventModal").classList.add("hidden");
+          } else {
+            // An unsuccessful delete may display details in the admin status area.
+            const msg = document.getElementById("adminStatus")?.textContent;
+            if (msg && msg.startsWith("ลบไม่สำเร็จ")) alert(msg);
+          }
+        } finally {
+          deleteBtn.disabled = false;
+        }
+      };
 
       document.getElementById("eventModal").classList.remove("hidden");
     }
