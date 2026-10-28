@@ -55,10 +55,80 @@ function renderAdminList() {
     const row=document.createElement('div');row.className='admin-row';
     const label=document.createElement('span');label.textContent=e.date+' · '+e.title;
     const button=document.createElement('button');button.textContent='แก้ไข';button.setAttribute('aria-label','แก้ไข '+e.title);
-    button.addEventListener('click',()=>openEditor(e));row.append(label,button);list.append(row);
+    button.addEventListener('click', () => openEditor(e));
+
+    const del = document.createElement('button');
+    del.textContent = 'ลบ';
+    del.type = 'button';
+    del.style.color = '#991b1b';
+    del.style.borderColor = '#fecaca';
+    
+    del.addEventListener('click', () => deleteEvent(e));
+    
+    const actions = document.createElement('div');
+    actions.className = 'admin-actions';
+    actions.style.margin = '0';
+    
+    actions.append(button, del);
+    row.append(label, actions);
+    list.append(row);
   });
   if(!list.childElementCount)list.textContent='ไม่พบกิจกรรม';
-}
+  }
+  async function deleteEvent(event) {
+    if (!isAdmin || !db || busy) return;
+  
+    const confirmed = confirm(
+      `ยืนยันลบกิจกรรมนี้อย่างถาวร?\n\n` +
+      `${event.title}\nวันที่ ${event.date}\n\n` +
+      `เมื่อลบแล้วจะไม่สามารถกู้คืนจากหน้าเว็บได้`
+    );
+  
+    if (!confirmed) return;
+  
+    busy = true;
+    byId('adminStatus').textContent = 'กำลังลบกิจกรรม…';
+  
+    try {
+      if (!await checkAdmin()) {
+        throw new Error('ไม่มีสิทธิ์แอดมิน');
+      }
+  
+      const { data, error } = await db
+        .from('calendar_events')
+        .delete()
+        .eq('id', event.id)
+        .eq('updated_at', event.updated_at)
+        .select('id');
+  
+      if (error) throw error;
+  
+      if (!data || data.length !== 1) {
+        throw new Error(
+          'ไม่พบข้อมูลเดิม หรือกิจกรรมถูกแก้ไขแล้ว กรุณาโหลดข้อมูลใหม่'
+        );
+      }
+  
+      const index = masterEvents.findIndex(
+        x => x.id === event.id
+      );
+  
+      if (index !== -1) {
+        masterEvents.splice(index, 1);
+      }
+  
+      repaint();
+  
+      byId('adminStatus').textContent =
+        'ลบกิจกรรมเรียบร้อยแล้ว';
+  
+    } catch (err) {
+      byId('adminStatus').textContent =
+        'ลบไม่สำเร็จ: ' + err.message;
+    } finally {
+      busy = false;
+    }
+  }
 function openEditor(event=null) {
   if(!isAdmin || busy)return;
   const form=byId('eventEditor');form.reset();editingId=event?.id||null;editingVersion=event?.updated_at||null;
