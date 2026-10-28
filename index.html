@@ -118,6 +118,12 @@
           <span class="w-2 h-2 rounded-full inline-block bg-teal-600 mr-1.5"></span>
           ระบบบริหารคุณภาพ ISO 9001/CB (<span id="countQuality">0</span>)
         </button>
+        <button data-category="planning"
+           class="cat-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 transition">
+            <span class="w-2 h-2 rounded-full inline-block bg-blue-600 mr-1.5"></span>
+            การรายงานผลกองแผนงาน
+            (<span id="countPlanning">0</span>)
+          </button>
         <button data-category="deadline" class="cat-filter-btn px-3 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700 hover:bg-rose-100 hover:text-rose-800 transition">
           <span class="w-2 h-2 rounded-full inline-block bg-rose-600 mr-1.5"></span>
           เฉพาะกำหนดส่งงาน (Deadlines) (<span id="countDeadline">0</span>)
@@ -174,6 +180,10 @@
           <div class="flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-full bg-teal-600"></span>
             <span>ประกันคุณภาพ ISO</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+            <span>การรายงานผลกองแผนงาน</span>
           </div>
           <div class="flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
@@ -381,7 +391,7 @@
         <label class="admin-wide">ชื่อกิจกรรม *<input name="title" required maxlength="500"></label>
         <label>วันที่เริ่ม * (ค.ศ.)<input name="date" type="date" required></label>
         <label>วันที่สิ้นสุด (ค.ศ.)<input name="endDate" type="date"></label>
-        <label>หมวดหมู่<select name="category"><option value="risk">ความเสี่ยงและควบคุมภายใน</option><option value="quality">ระบบบริหารคุณภาพ ISO</option></select></label>
+        <label>หมวดหมู่<select name="category"><option value="risk">ความเสี่ยงและควบคุมภายใน</option><option value="quality">ระบบบริหารคุณภาพ ISO</option><option value="planning">การรายงานผลกองแผนงาน</option></select></label>
         <label>กำหนดส่งภายใน / สถานะ<input name="internalDate" maxlength="200" placeholder="เช่น ส่งแล้ว หรือ 20 ต.ค. 2569"></label>
         <label>ผู้รับผิดชอบ<input name="responsible" maxlength="500"></label>
         <label>ช่องทาง / ระบบ<input name="system" maxlength="500"></label>
@@ -454,6 +464,7 @@
         // Category check
         if (currentCategory === "risk" && evt.category !== "risk") return false;
         if (currentCategory === "quality" && evt.category !== "quality") return false;
+        if (currentCategory === "planning" && evt.category !== "planning") return false;
         if (currentCategory === "deadline" && !evt.isDeadline) return false;
 
         // Search check
@@ -480,6 +491,11 @@
       document.getElementById("countRisk").textContent = risk;
       document.getElementById("countQuality").textContent = quality;
       document.getElementById("countDeadline").textContent = deadline;
+      const planning = masterEvents.filter(
+        e => e.category === "planning"
+      ).length;
+      
+      document.getElementById("countPlanning").textContent = planning;
     }
 
     // Render Month Calendar Grid (exact look of screenshot)
@@ -548,6 +564,9 @@
           let badgeClass = "bg-purple-100 text-purple-900 border-purple-200 hover:bg-purple-200";
           if (evt.category === "quality") {
             badgeClass = "bg-teal-100 text-teal-900 border-teal-200 hover:bg-teal-200";
+          }
+          if (evt.category === "planning") {
+            badgeClass = "bg-blue-100 text-blue-900 border-blue-200 hover:bg-blue-200";
           }
           if (evt.isDeadline) {
             badgeClass = "bg-rose-100 text-rose-900 border-rose-300 font-medium hover:bg-rose-200";
@@ -658,6 +677,10 @@
           catBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-100 text-teal-800">ระบบคุณภาพ ISO</span>`;
         }
 
+        if (evt.category === "planning") {
+          catBadge = `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800">การรายงานผลกองแผนงาน</span>`;
+        }
+
         tr.innerHTML = `
           <td class="py-3 px-3 font-semibold text-slate-900 whitespace-nowrap">
             ${displayDate}
@@ -702,6 +725,9 @@
       if (evt.category === "risk") {
         badge.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200";
         badge.textContent = "บริหารความเสี่ยงและควบคุมภายใน";
+      } else if (evt.category === "planning") {
+        badge.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200";
+        badge.textContent = "การรายงานผลกองแผนงาน";
       } else {
         badge.className = "text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200";
         badge.textContent = "ระบบบริหารคุณภาพ ISO 9001/CB";
@@ -773,6 +799,7 @@
       events.forEach(evt => {
         let badgeColor = "border-purple-300 bg-purple-50 text-purple-900";
         if (evt.category === "quality") badgeColor = "border-teal-300 bg-teal-50 text-teal-900";
+        if (evt.category === "planning") badgeColor = "border-blue-300 bg-blue-50 text-blue-900";
         if (evt.isDeadline) badgeColor = "border-rose-300 bg-rose-50 text-rose-900";
 
         const div = document.createElement("div");
