@@ -189,7 +189,10 @@ window.addEventListener('DOMContentLoaded',async()=>{
       const {error}=await db.auth.signInWithPassword({email:form.elements.email.value.trim(),password:form.elements.password.value});
       if(error)throw new Error('เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมล รหัสผ่าน และการเชื่อมต่อ');
       if(!await checkAdmin()){await db.auth.signOut({scope:'local'});throw new Error('บัญชีนี้ยังไม่ได้รับสิทธิ์แอดมิน กรุณาติดต่อผู้ดูแลระบบ');}
-      byId('loginDialog').close();renderAdminList();byId('adminDialog').showModal();
+      byId('loginDialog').close();
+      renderAdminList();
+      renderCalendar();
+      byId('adminDialog').showModal();
     }catch(error){byId('loginStatus').textContent=error.message;}
     finally{form.elements.password.value='';button.disabled=false;}
   });
@@ -207,6 +210,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
     db=window.supabase.createClient(config.supabaseUrl,config.supabasePublishableKey,{auth:{persistSession:true,storage:window.sessionStorage,autoRefreshToken:true,detectSessionInUrl:false}});
     db.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||!session)closeAdmin();});
     await loadEvents();
+    await checkAdmin();
     // Refresh when readers return to the tab. No polling and no local event database.
     document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!busy&&!byId('editorDialog').open)loadEvents();});
   }catch(_){byId('connectionStatus').textContent='เชื่อมต่อระบบไม่ได้ กรุณาตรวจสอบ config.js และการเชื่อมต่อ';}
